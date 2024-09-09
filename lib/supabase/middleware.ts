@@ -2,9 +2,9 @@ import {createServerClient} from '@supabase/ssr'
 import {type NextRequest, NextResponse} from 'next/server'
 import config from "@/config";
 
-export async function updateSession(request: NextRequest, {publicPages, authPages}: {
-  publicPages?: string[],
-  authPages?: string[]
+export async function updateSession(request: NextRequest, {authRoutes, publicRoutes}: {
+  authRoutes?: string[],
+  publicRoutes?: string[]
 }) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -39,8 +39,8 @@ export async function updateSession(request: NextRequest, {publicPages, authPage
     data: {user},
   } = await supabase.auth.getUser()
 
-  const isAuthRoutes = !!authPages?.some(page => request.nextUrl.pathname.startsWith(page));
-  const isPublicRoutes = !!publicPages?.some(page => request.nextUrl.pathname.startsWith(page));
+  const isAuthRoutes = !!publicRoutes?.some(page => request.nextUrl.pathname.startsWith(page));
+  const isPublicRoutes = !!authRoutes?.some(page => request.nextUrl.pathname.startsWith(page));
 
   if (
     !user &&
@@ -50,6 +50,12 @@ export async function updateSession(request: NextRequest, {publicPages, authPage
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone()
     url.pathname = '/login'
+    return NextResponse.redirect(url)
+  }
+
+  if (user && isAuthRoutes) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/'
     return NextResponse.redirect(url)
   }
 

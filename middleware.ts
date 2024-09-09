@@ -1,11 +1,11 @@
 import {type NextRequest} from 'next/server'
 import {updateSession} from '@/lib/supabase/middleware'
 
-const publicPages: string[] = [
+const authRoutes: string[] = [
   "/about"
 ]
 
-const authPages: string[] = [
+const publicRoutes: string[] = [
   "/login",
   "/register",
   "/forgot-password",
@@ -14,8 +14,8 @@ const authPages: string[] = [
 
 export async function middleware(request: NextRequest) {
   return await updateSession(request, {
-    publicPages,
-    authPages,
+    authRoutes,
+    publicRoutes,
   })
 }
 
