@@ -1,24 +1,24 @@
 "use client"
 
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { supabase } from "@/lib/supabase";
-import { toast } from "sonner";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {Button} from "@/components/ui/button"
+import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/components/ui/card"
+import {Input} from "@/components/ui/input"
+import {useForm} from "react-hook-form";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {z} from "zod";
+import {supabase} from "@/lib/supabase/client";
+import {toast} from "sonner";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form";
 import {registrationFormSchema} from "@/lib/schema";
-import {redirect} from "next/navigation";
+import {useRouter} from "next/navigation";
+import {useState} from "react";
+import {Loader2} from "lucide-react";
+
 export function RegisterForm() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
   const form = useForm<z.infer<typeof registrationFormSchema>>({
     resolver: zodResolver(registrationFormSchema),
     defaultValues: {
@@ -29,12 +29,15 @@ export function RegisterForm() {
   });
 
   const onSubmit = async (values: z.infer<typeof registrationFormSchema>) => {
-    const { email, password } = values;
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) toast.error(error.message);
-    else {
+    setLoading(true);
+    const {email, password} = values;
+    const {error} = await supabase.auth.signUp({email, password});
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+    } else {
       toast.success("Registration successful. Check your email for a confirmation link.");
-      redirect('/login');
+      router.push('/login');
     }
   }
 
@@ -51,50 +54,62 @@ export function RegisterForm() {
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <div className="grid gap-4">
               <FormField
-                render={({ field }) => (
+                render={({field}) => (
                   <FormItem className="grid gap-2">
                     <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
                         placeholder="m@example.com"
+                        disabled={loading}
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage/>
                   </FormItem>
                 )}
                 name="email"
                 control={form.control}
               />
               <FormField
-                render={({ field }) => (
+                render={({field}) => (
                   <FormItem className="grid gap-2">
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="********" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="********"
+                        disabled={loading}
+                        {...field}
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage/>
                   </FormItem>
                 )}
                 name="password"
                 control={form.control}
               />
               <FormField
-                render={({ field }) => (
+                render={({field}) => (
                   <FormItem className="grid gap-2">
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="********" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="********"
+                        disabled={loading}
+                        {...field}
+                      />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage/>
                   </FormItem>
                 )}
                 name="confirmPassword"
                 control={form.control}
               />
-              <Button type="submit" className="w-full">
-                Register
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                {loading ? "Registering" : "Register"}
               </Button>
             </div>
           </form>

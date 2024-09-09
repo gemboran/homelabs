@@ -1,16 +1,6 @@
-import {
-  BadgeCheck,
-  Bell,
-  ChevronsUpDown,
-  CreditCard,
-  LogOut,
-} from "lucide-react"
+import {BadgeCheck, Bell, ChevronsUpDown, CreditCard, LogOut,} from "lucide-react"
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
+import {Avatar, AvatarFallback, AvatarImage,} from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,19 +10,32 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {useRouter} from "next/navigation";
+import {supabase} from "@/lib/supabase/client";
+import {toast} from "sonner";
+import {User} from "@/hooks/use-user";
+import {getInitials} from "@/lib/utils";
 
 export function NavUser({
   user,
 }: {
-  user: {
-    name: string
-    email: string
-    avatar: string
-  }
+  user: User
 }) {
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    const {error} = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Error while logging out: " + error.message);
+    } else {
+      router.replace("/login");
+    }
+  };
+
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="w-full rounded-md outline-none ring-ring hover:bg-accent focus-visible:ring-2 data-[state=open]:bg-accent">
+      <DropdownMenuTrigger
+        className="w-full rounded-md outline-none ring-ring hover:bg-accent focus-visible:ring-0 data-[state=open]:bg-accent">
         <div className="flex items-center gap-2 px-2 py-1.5 text-left text-sm transition-all">
           <Avatar className="h-7 w-7 rounded-md border">
             <AvatarImage
@@ -40,7 +43,7 @@ export function NavUser({
               alt={user.name}
               className="animate-in fade-in-50 zoom-in-90"
             />
-            <AvatarFallback className="rounded-md">CN</AvatarFallback>
+            <AvatarFallback className="rounded-md">{getInitials(user.name)}</AvatarFallback>
           </Avatar>
           <div className="grid flex-1 leading-none">
             <div className="font-medium">{user.name}</div>
@@ -61,7 +64,7 @@ export function NavUser({
           <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm transition-all">
             <Avatar className="h-7 w-7 rounded-md">
               <AvatarImage src={user.avatar} alt={user.name} />
-              <AvatarFallback>CN</AvatarFallback>
+              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
             </Avatar>
             <div className="grid flex-1">
               <div className="font-medium">{user.name}</div>
@@ -87,7 +90,7 @@ export function NavUser({
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="gap-2">
+        <DropdownMenuItem className="gap-2" onClick={handleLogout}>
           <LogOut className="h-4 w-4 text-muted-foreground" />
           Log out
         </DropdownMenuItem>

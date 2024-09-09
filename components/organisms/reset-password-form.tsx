@@ -1,55 +1,56 @@
 "use client"
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "@/components/ui/card"
+import {useRouter} from "next/navigation"
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
-import {loginFormSchema} from "@/lib/schema";
-import {z} from "zod";
 import {supabase} from "@/lib/supabase/client";
 import {toast} from "sonner";
-import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form";
-import {useRouter, useSearchParams} from "next/navigation";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
-import Link from "next/link";
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form";
+import {z} from "zod";
 import {Button} from "@/components/ui/button";
 import {useState} from "react";
 import {Loader2} from "lucide-react";
 
-export function LoginForm() {
+const resetPasswordSchema = z.object({
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
+
+export function ResetPasswordForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof loginFormSchema>>({
-    resolver: zodResolver(loginFormSchema),
+  const form = useForm<z.infer<typeof resetPasswordSchema>>({
+    resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      email: "",
       password: "",
+      confirmPassword: "",
     }
   });
 
-  const onSubmit = async (values: z.infer<typeof loginFormSchema>) => {
+  const onSubmit = async (values: z.infer<typeof resetPasswordSchema>) => {
     setLoading(true);
-    const {error, data} = await supabase.auth.signInWithPassword(values);
+    const {error} = await supabase.auth.updateUser({password: values.password});
     if (error) {
       toast.error(error.message);
       setLoading(false);
-    } else if (data.user && data.user.email_confirmed_at) {
-      toast.success("Login successful");
-      const redirectTo = searchParams.get('redirect_to') || '/';
-      router.replace(redirectTo);
     } else {
-      toast.error("Please confirm your email before logging in.");
-      setLoading(false);
+      toast.success("Password reset successful. Please log in with your new password.");
+      router.replace("/login");
     }
   }
 
   return (
     <Card className="mx-auto max-w-sm">
       <CardHeader>
-        <CardTitle className="text-2xl">Login</CardTitle>
+        <CardTitle className="text-2xl">Reset Password</CardTitle>
         <CardDescription>
-          Enter your email below to login to your account
+          Enter a new password and the confirmation below.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -59,30 +60,7 @@ export function LoginForm() {
               <FormField
                 render={({field}) => (
                   <FormItem className="grid gap-2">
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="m@example.com"
-                        disabled={loading}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage/>
-                  </FormItem>
-                )}
-                name="email"
-                control={form.control}
-              />
-              <FormField
-                render={({field}) => (
-                  <FormItem className="grid gap-2">
-                    <div className="flex items-center">
-                      <FormLabel> Password</FormLabel>
-                      <Link href="/forgot-password" className="ml-auto inline-block text-sm underline">
-                        Forgot your password?
-                      </Link>
-                    </div>
+                    <FormLabel>New Password</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
@@ -91,28 +69,37 @@ export function LoginForm() {
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
+                    <FormMessage/>
                   </FormItem>
                 )}
                 name="password"
                 control={form.control}
               />
+              <FormField
+                render={({field}) => (
+                  <FormItem className="grid gap-2">
+                    <FormLabel>Confirm New Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="********"
+                        disabled={loading}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage/>
+                  </FormItem>
+                )}
+                name="confirmPassword"
+                control={form.control}
+              />
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                {loading ? "Logging in" : "Login"}
-              </Button>
-              <Button variant="outline" className="w-full">
-                Login with Google
+                {loading ? "Resetting Password" : "Reset Password"}
               </Button>
             </div>
           </form>
         </Form>
-        <div className="mt-4 text-center text-sm">
-          Don&apos;t have an account?{" "}
-          <Link href="/register" className="underline">
-            Register
-          </Link>
-        </div>
       </CardContent>
     </Card>
   )

@@ -20,12 +20,12 @@ import {
   Turtle,
 } from "lucide-react"
 
-import { NavMain } from "@/components/molecules/nav-main"
-import { NavProjects } from "@/components/molecules/nav-projects"
-import { NavSecondary } from "@/components/molecules/nav-secondary"
-import { NavUser } from "@/components/molecules/nav-user"
-import { StorageCard } from "@/components/molecules/storage-card"
-import { TeamSwitcher } from "@/components/atoms/team-switcher"
+import {NavMain} from "@/components/molecules/nav-main"
+import {NavProjects} from "@/components/molecules/nav-projects"
+import {NavSecondary} from "@/components/molecules/nav-secondary"
+import {NavUser} from "@/components/molecules/nav-user"
+import {StorageCard} from "@/components/molecules/storage-card"
+import {TeamSwitcher} from "@/components/atoms/team-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -34,6 +34,9 @@ import {
   SidebarItem,
   SidebarLabel,
 } from "@/components/ui/sidebar"
+import {useUser} from "@/hooks/use-user";
+import {redirect} from "next/navigation";
+
 const data = {
   teams: [
     {
@@ -248,6 +251,16 @@ const data = {
 }
 
 export function AppSidebar() {
+  const {user, loading} = useUser();
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    return redirect("/login");
+  }
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -271,7 +284,7 @@ export function AppSidebar() {
         </SidebarItem>
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={user}/>
       </SidebarFooter>
     </Sidebar>
   )
