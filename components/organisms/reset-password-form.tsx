@@ -1,6 +1,6 @@
 "use client"
 
-import {useRouter} from "next/navigation"
+import {useRouter, useSearchParams} from "next/navigation"
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
 import {supabase} from "@/lib/supabase/client";
@@ -10,12 +10,13 @@ import {Input} from "@/components/ui/input";
 import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage} from "@/components/ui/form";
 import {z} from "zod";
 import {Button} from "@/components/ui/button";
-import {useState} from "react";
-import {Loader2} from "lucide-react";
+import {useEffect, useState} from "react";
+import {Ban, Loader2} from "lucide-react";
 
 const resetPasswordSchema = z.object({
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+  error: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -23,7 +24,10 @@ const resetPasswordSchema = z.object({
 
 export function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>();
+  const isError = searchParams.get('error');
 
   const form = useForm<z.infer<typeof resetPasswordSchema>>({
     resolver: zodResolver(resetPasswordSchema),
@@ -32,6 +36,14 @@ export function ResetPasswordForm() {
       confirmPassword: "",
     }
   });
+
+  useEffect(() => {
+    if (isError) setError(searchParams.get('error_description'));
+    if (error) {
+      toast.error(error);
+      form.setError("error", {message: error});
+    }
+  }, [isError, error]);
 
   const onSubmit = async (values: z.infer<typeof resetPasswordSchema>) => {
     setLoading(true);
@@ -65,7 +77,7 @@ export function ResetPasswordForm() {
                       <Input
                         type="password"
                         placeholder="********"
-                        disabled={loading}
+                        disabled={loading || !!error}
                         {...field}
                       />
                     </FormControl>
@@ -83,7 +95,7 @@ export function ResetPasswordForm() {
                       <Input
                         type="password"
                         placeholder="********"
-                        disabled={loading}
+                        disabled={loading || !!error}
                         {...field}
                       />
                     </FormControl>
@@ -93,10 +105,13 @@ export function ResetPasswordForm() {
                 name="confirmPassword"
                 control={form.control}
               />
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full" disabled={loading || !!error}>
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                {error && <Ban className="mr-2 h-4 w-4 text-red-600"/>}
                 {loading ? "Resetting Password" : "Reset Password"}
               </Button>
+              <FormField render={() => <FormMessage className="w-full text-center"/>} name="error"
+                         control={form.control}/>
             </div>
           </form>
         </Form>
