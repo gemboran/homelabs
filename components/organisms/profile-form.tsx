@@ -44,6 +44,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>
 
 export function ProfileForm() {
   const [loading, setLoading] = useState(false)
+  const [avatar, setAvatar] = useState("")
   const {user} = useUser()
 
   const form = useForm<ProfileFormValues>({
@@ -56,6 +57,8 @@ export function ProfileForm() {
     mode: "onChange",
   })
 
+  const fileRef = form.register("avatar")
+
   useEffect(() => {
     if (!user) return
     form.reset({
@@ -65,11 +68,34 @@ export function ProfileForm() {
     })
   }, [user, form])
 
+  function handlePreview(event: React.ChangeEvent<HTMLInputElement>) {
+    if (event.target.files && event.target.files.length) {
+      setAvatar(URL.createObjectURL(event.target.files[0]))
+    }
+    return fileRef.onChange(event)
+  }
+
   async function onSubmit(data: ProfileFormValues) {
     setLoading(true)
+    let avatar_url: string | undefined = undefined;
+    if (data.avatar && data.avatar.length) {
+      const file = data.avatar[0]
+      const fileName = `${user?.id}_${new Date().getTime()}_${file.name}`
+      const fileData = await supabase.storage.from("avatars").upload(fileName, file)
+      if (fileData.error) {
+        toast.error(fileData.error.message)
+        setLoading(false)
+        return
+      }
+      const {data: {publicUrl}} = supabase.storage.from("avatars").getPublicUrl(fileData.data.path);
+      avatar_url = publicUrl
+    }
     const {error} = await supabase.from("profiles").upsert({
-      ...data,
       id: user?.id,
+      username: data.username,
+      full_name: data.full_name,
+      website: data.website,
+      avatar_url,
     })
     if (error) {
       toast.error(error.message);
@@ -83,13 +109,12 @@ export function ProfileForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
-          render={(({field}) => (
+          render={(() => (
             <div className="flex flex-col items-center justify-center space-y-4">
-              <div className="relative">
-                <FormLabel>
+              <FormLabel className="relative">
                   <Avatar className="w-36 h-36 border-2 cursor-pointer">
                     <AvatarImage
-                      src={user?.avatar}
+                      src={avatar || user?.avatar}
                       alt={user?.name}
                       className="animate-in fade-in-50 zoom-in-90"
                     />
@@ -105,11 +130,11 @@ export function ProfileForm() {
                     type="file"
                     accept="image/*"
                     className="mt-2 sr-only"
-                    {...field}
+                    {...fileRef}
+                    onChange={handlePreview}
                   />
                 </FormControl>
                 <FormMessage/>
-              </div>
             </div>
           ))}
           name="avatar"
