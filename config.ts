@@ -1,8 +1,8 @@
 import {z} from "zod";
 
 const configSchema = z.object({
-  supabaseUrl: z.string().url(),
-  supabaseKey: z.string(),
+  supabaseUrl: z.string({message: "NEXT_PUBLIC_SUPABASE_URL is required"}).url(),
+  supabaseKey: z.string({message: "NEXT_PUBLIC_SUPABASE_ANON_KEY is required"}),
 });
 
 const initialConfig: z.infer<typeof configSchema> = {
@@ -13,8 +13,8 @@ const initialConfig: z.infer<typeof configSchema> = {
 const {error, data: config} = configSchema.safeParse(initialConfig);
 
 if (error) {
-  console.error(error);
-  process.exit(1);
+  error.errors.map(item => console.error(item.message));
+  throw new Error();
 }
 
 export default config as z.infer<typeof configSchema>

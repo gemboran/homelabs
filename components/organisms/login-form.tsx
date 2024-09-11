@@ -13,7 +13,7 @@ import {Input} from "@/components/ui/input";
 import Link from "next/link";
 import {Button} from "@/components/ui/button";
 import {useState} from "react";
-import {Loader2} from "lucide-react";
+import {LoadingIcon} from "@/components/atoms/loading-icon";
 
 export function LoginForm() {
   const router = useRouter();
@@ -98,7 +98,7 @@ export function LoginForm() {
                 control={form.control}
               />
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                <LoadingIcon loading={loading}/>
                 {loading ? "Logging in" : "Login"}
               </Button>
               <Button variant="outline" className="w-full">

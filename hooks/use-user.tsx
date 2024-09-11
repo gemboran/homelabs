@@ -4,9 +4,11 @@ import {toast} from "sonner";
 
 export type User = {
   id: string;
-  name: string;
+  username?: string;
+  name?: string;
   email: string;
   avatar: string;
+  website?: string;
 }
 
 export const useUser = () => {
@@ -30,7 +32,7 @@ export const useUser = () => {
       if (user) {
         const {data: profileData, error: profileError} = await supabase
           .from("profiles")
-          .select(`full_name, avatar_url`)
+          .select(`full_name, avatar_url, username, website`)
           .eq("id", user.id)
           .single();
 
@@ -42,9 +44,11 @@ export const useUser = () => {
 
         setUser({
           id: user.id,
+          username: profileData.username,
           name: profileData.full_name,
           email: user.email!,
           avatar: profileData.avatar_url,
+          website: profileData.website
         });
       }
 
