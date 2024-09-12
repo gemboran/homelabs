@@ -14,10 +14,12 @@ import Link from "next/link";
 import {Button} from "@/components/ui/button";
 import {useState} from "react";
 import {LoadingIcon} from "@/components/atoms/loading-icon";
+import {useAptabase} from "@aptabase/react"
 
 export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { trackEvent } = useAptabase();
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof loginFormSchema>>({
@@ -33,13 +35,16 @@ export function LoginForm() {
     const {error, data} = await supabase.auth.signInWithPassword(values);
     if (error) {
       toast.error(error.message);
+      trackEvent("login_failed", { error: error.message });
       setLoading(false);
     } else if (data.user && data.user.email_confirmed_at) {
       toast.success("Login successful");
+      trackEvent("login_successful");
       const redirectTo = searchParams.get('redirect_to') || '/';
       router.replace(redirectTo);
     } else {
       toast.error("Please confirm your email before logging in.");
+      trackEvent("login_unconfirmed_email");
       setLoading(false);
     }
   }
